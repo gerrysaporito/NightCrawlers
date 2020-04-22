@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+}
+
+#jumbo {
+  background-image: url(./pictures/signup.jpg);
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#signup {
+  z-index: 1;
+  width: 400px;
+  background: black;
+  border: 2px solid white;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+}
+
+.formStyle {
+  width: 80%;
+  margin: 35px auto;
+}
+
+#signup h1 {
+  margin: 20px auto 0 auto;
+  text-align: center;
+}

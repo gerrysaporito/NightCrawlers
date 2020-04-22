@@ -1,0 +1,77 @@
+.navBar {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  height: 70px;
+  /*background-color:#1C2833;*/
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: linear-gradient(#212F3C,#212F3C,#212F3C,#212F3C,#212F3C,#212F3C,#212F3C,#212F3C,#00FFFF);
+}
+.nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100vw;
+  color: white;
+  font-family: 'Exo 2', sans-serif;
+  margin: auto;
+}
+
+.brand {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  letter-spacing: 1px;
+}
+
+.brand h1 {
+    font-size: 40px;
+    margin: 5px 20px;
+}
+
+.accountbutton {
+    margin-left: 5px;
+    width: 100px;
+    font-size: 20px;
+    color: white;
+    background-color: inherit;
+    border: none;
+    text-decoration: none;
+}
+
+.accountbutton:hover {
+  cursor: pointer;
+}
+
+.account {
+  display: inline-flex;
+  flex-direction: row;
+  margin-right: 20px;
+}
+
+.jumbo {
+  position: fixed;
+  top: 0;
+}
+
+.mainFlashBtn {
+  z-index: 3;
+  color: #3c763d;
+  background-color: #dff0d8;
+  border-color: #d6e9c6;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+  width: 40%;
+  margin-top: 80px;
+  text-align: center;
+  font-family: 'Exo 2', sans-serif;
+}

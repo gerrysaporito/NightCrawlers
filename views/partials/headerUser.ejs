@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Night Crawlers</title>
+    <link href="https://fonts.googleapis.com/css?family=Exo+2" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/login.css">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/signup.css">
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=SOME_KEY
+    &callback=initMap"></script>
+  </head>
+  <body>
+
+    <div class="flashCtn">
+      <% if(error && error.length > 0) { %>
+        <div class="alert alert-danger flashBtn" role="alert">
+          <p><%= error %></p>
+        </div>
+        <% } %>
+        <% if(success && success.length > 0) { %>
+          <div class="alert alert-success flashBtn" role="alert">
+            <p><%= success %></p>
+          </div>
+        <% } %>
+    </div>

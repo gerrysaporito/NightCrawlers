@@ -1,0 +1,341 @@
+<% include ./partials/header %>
+<div class="popupbox">
+  <form action="/" method="POST">
+    <h3 style="font-family: 'Exo 2', sans-serif"><center>Plan your Adventure</center></h3>
+
+    <table>
+      <tr>
+        <td><p style="font-family: 'Exo 2', sans-serif">Your Address:</p></td>
+        <td width="30%">
+          <input id="address" class="form-control" type="text" name="address" min=0 max=60 placeholder="Your Address" required>
+        </td>
+      </tr>
+      <tr>
+        <td><p style="font-family: 'Exo 2', sans-serif"> Number of Bars:</p></td>
+        <td width="30%">
+          <input class="form-control" type="number" name="hits" min = 1 max = 8 placeholder="1 - 8 bars" required>
+        </tr>
+      </div>
+    </table><br><br>
+    <center><input type="submit" name="submit"></center></br></br>
+  </form>
+</div>
+<!-- Maps API -->
+<div id="map"></div>
+
+<!-- <script type="text/javascript" src="./js/maps.js"></script> -->
+<script>
+  function initMap(){
+    //===============================VARIABLES==============================//
+    var options = { //styling options
+      zoom:12,
+      center:{lat: 43.4723, lng:80.5449},
+      styles: [
+      {
+        elementType: 'geometry',
+        stylers: [{color: '#242f3e'}]
+      },
+      {
+        elementType: 'labels.text.stroke',
+        stylers: [{color: '#242f3e'}]
+      },
+      {
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#746855'}]
+      },
+      {
+        featureType: 'administrative.locality',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#d59563'}]
+      },
+      {
+        featureType: 'poi',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#d59563'}]
+      },
+      {
+        featureType: 'poi.park',
+        elementType: 'geometry',
+        stylers: [{color: '#263c3f'}]
+      },
+      {
+        featureType: 'poi.park',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#6b9a76'}]
+      },
+      {
+        featureType: 'road',
+        elementType: 'geometry',
+        stylers: [{color: '#38414e'}]
+      },
+      {
+        featureType: 'road',
+        elementType: 'geometry.stroke',
+        stylers: [{color: '#212a37'}]
+      },
+      {
+        featureType: 'road',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#9ca5b3'}]
+      },
+      {
+        featureType: 'road.highway',
+        elementType: 'geometry',
+        stylers: [{color: '#00f9ff'}]
+      },
+      {
+        featureType: 'road.highway',
+        elementType: 'geometry.stroke',
+        stylers: [{color: '#1f2835'}]
+      },
+      {
+        featureType: 'road.highway',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#f3d19c'}]
+      },
+      {
+        featureType: 'transit',
+        elementType: 'geometry',
+        stylers: [{color: '#2f3948'}]
+      },
+      {
+        featureType: 'transit.station',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#d59563'}]
+      },
+      {
+        featureType: 'water',
+        elementType: 'geometry',
+        stylers: [{color: '#17263c'}]
+      },
+      {
+        featureType: 'water',
+        elementType: 'labels.text.fill',
+        stylers: [{color: '#515c6d'}]
+      },
+      {
+        featureType: 'water',
+        elementType: 'labels.text.stroke',
+        stylers: [{color: '#17263c'}]
+      }
+      ]
+    },
+    markers = [],
+    currLocationMarker,
+    destinationMarker,
+    geocoder = new google.maps.Geocoder,
+    infoWindow = new google.maps.InfoWindow,
+    directionsService = new google.maps.DirectionsService(),
+    directionsDisplay = new google.maps.DirectionsRenderer({
+      suppressInfoWindows: true,
+      suppressMarkers: true,
+      map: map
+    }),
+    map = new google.maps.Map(document.getElementById('map'), options);
+    directionsDisplay.setMap(map);
+
+    //=============================LOGIC FUNCTIONS==========================//
+    //Locates user on map on page load
+    <% if(!trip) { %>
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) { //Geolocation has worked
+          let pos = { //gets current position
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          deleteMarkers();
+          geocodeLatLng(geocoder, map, infoWindow, pos);
+        }, function() { //Geolocation has failed
+          handleLocationError(true, infoWindow, map.getCenter());
+        });
+      } else { //Browser doesn't support Geolocation
+      handleLocationError(false, infoWindow, map.getCenter());
+    }
+    <% } %>
+
+    //locates user on map when address is inputted in search box
+    document.getElementById('address').addEventListener('change', function() { // Converts address to location on map
+      let address = document.getElementById('address').value;
+      if(address){
+        geocoder.geocode({'address': address}, function(results, status) {
+          if (status == 'OK') {
+            map.setCenter(results[0].geometry.location);
+            address = results[0].geometry.location;
+            updateCurrLocationMarker(results[0].geometry.location, map);
+            deleteMarkers();
+            markers.push(currLocationMarker);
+            updateAllMarkersOnMap(markers, map);
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+      }
+    });
+
+    //locates user when map is clicked
+    map.addListener('click', function(event) {
+      <% if(!trip) { %>
+        deleteMarkers();
+        geocodeLatLng(geocoder, map, infoWindow, event.latLng);
+        <% } else { %>
+          map.setCenter(event.latLng);
+          map.setZoom(15);
+          <% } %>
+        });
+    //============================AFTER TRIP IS SUBMITTED==========================//
+    <% if(trip) { %>
+      function calculateAndDisplayRoute(directionsService, directionsDisplay) {
+        let trip = <%- JSON.stringify(trip) %>;
+        //creating route request parameters---------------------------------------------------
+        let hits = trip.search.hits,
+        time = trip.search.time,
+        destinationMarker = new google.maps.Marker({
+          position:trip.bars[trip.bars.length-1].location,
+          map:map,
+        });
+        waypoints = [],
+        request = {
+          origin: trip.search.address,
+          destination: new google.maps.LatLng(trip.bars[trip.bars.length-1].location),
+          travelMode: trip.search.transportation,
+          waypoints: [],
+          optimizeWaypoints: true,
+          provideRouteAlternatives: true
+        }
+        deleteMarkers();
+        geocoder.geocode({'address': trip.search.address}, function(results, status) {
+          if (status == 'OK') {
+            updateCurrLocationMarker(results[0].geometry.location, map);
+          } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+          }
+        });
+
+        for(let barIndex = 0; barIndex < trip.bars.length; barIndex++){
+          //creating waypoints
+          let newWaypoint = {location: new google.maps.LatLng(trip.bars[barIndex].location), stopover: true}
+          waypoints.push(newWaypoint);
+          //creating markers for bars
+          addMarker(new google.maps.LatLng(trip.bars[barIndex].location), map, trip.bars[barIndex].name);
+        }
+        markers.push(destinationMarker);
+        request.waypoints = waypoints;
+        //showing directions on map
+        directionsService.route(request, function(response, status) {
+          if (status == google.maps.DirectionsStatus.OK) {
+            directionsDisplay.setDirections(response);
+
+          } else {
+            alert("directions response "+status);
+          }
+        });
+      }
+      calculateAndDisplayRoute(directionsService, directionsDisplay);
+      <% } %>
+    //============================HELPER FUNCTIONS==========================//
+    //marker functions
+    function addMarker(coords, currMap, name){ //adds marker at location
+      let marker = new google.maps.Marker({
+        position:coords,
+        map:currMap,
+        title: ""
+      });
+      attachSecretMessage(marker, name);
+      marker.addListener("mouseover", function toggleBounce() {
+        if (currLocationMarker.getAnimation() !== null) {
+          currLocationMarker.setAnimation(null);
+        } else {
+          currLocationMarker.setAnimation(google.maps.Animation.BOUNCE);
+        }
+      });
+      markers.push(marker);
+    }
+    function showMarkers(map){ // Shows markers currently in markers array.
+      for (let i = 0; i < markers.length; i++) {
+        markers[i].setMap(map);
+      }
+    }
+    function deleteMarkers(){ // Deletes all markers in markers array.
+      for (let i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+      markers = [];
+    }
+    function updateAllMarkersOnMap(newMarkers, currMap){
+      let tempMarkers = newMarkers;
+      deleteMarkers();
+      markers = tempMarkers;
+      showMarkers(map);
+    }
+    function updateCurrLocationMarker(coords, currMap){
+      currLocationMarker = new google.maps.Marker({
+        position:coords,
+        map:currMap,
+        animation: google.maps.Animation.DROP
+      });
+      attachSecretMessage(currLocationMarker, "Start");
+    }
+    function attachSecretMessage(marker, secretMessage) {
+      var infowindow = new google.maps.InfoWindow({
+        content: secretMessage
+      });
+      marker.addListener('click', function() {
+        infowindow.open(marker.get('map'), marker);
+      });
+    }
+    function addCurrentLocationAndDestinationMarkerToMarkers(){
+      if(currLocationMarker){
+        markers.unshift(currLocationMarker);
+      } else {
+        console.log("No current location marker");
+      }
+      if(destinationMarker){
+        markers.push(destinationMarker);
+      } else {
+        console.log("No destination marker");
+      }
+    }
+    //other functions
+    function geocodeLatLng(geocoder, map, infowindow, latlng) { //locates geocode on map
+      geocoder.geocode({'location': latlng}, function(results, status) {
+        if (status === 'OK') {
+          if (results[0]) {
+            //setting the geolocation marker on map
+            if(!markers){
+              updateCurrLocationMarker(latlng, map);
+              addCurrentLocationAndDestinationMarkerToMarkers();
+              updateAllMarkersOnMap(markers, map);
+            } else {
+              let tempMarkersArr = markers;
+              deleteMarkers();
+              updateCurrLocationMarker(latlng, map);
+              tempMarkersArr.shift();
+              tempMarkersArr.unshift(currLocationMarker);
+              updateAllMarkersOnMap(tempMarkersArr, map);
+            }
+            //centering map view
+            map.setZoom(15);
+            infowindow.setContent(results[0].formatted_address);
+            infowindow.open(map, markers[0]);
+            map.setCenter(latlng);
+            //setting address in search bar
+            document.querySelector("#address").value = results[0].formatted_address;
+          } else {
+            window.alert('No results found');
+          }
+        } else {
+          window.alert('Geocoder failed due to: ' + status);
+        }
+      });
+    }
+    function handleLocationError(browserHasGeolocation, infoWindow, pos) { //Handles errors for Geolocations
+          infoWindow.setPosition(pos);
+          infoWindow.setContent(browserHasGeolocation ? 'Error: The Geolocation service failed.' : 'Error: Your browser doesn\'t support geolocation.');
+          infoWindow.open(map);
+        }
+  }
+      </script>
+      <script async defer src="https://maps.googleapis.com/maps/api/js?key=SOME_KEY&callback=initMap"></script>
+
+
+      <% include ./partials/footer %>
